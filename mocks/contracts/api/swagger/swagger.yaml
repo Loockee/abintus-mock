@@ -1,0 +1,559 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: A simple contract API
+  description: |-
+    This API defines the contract for service which provides information about contracts on the system.
+  termsOfService: http://rty.io/terms/
+  contact:
+    name: API Support
+    url: http://support.rty.io
+    email: support@rty.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+host: localhost:10010
+basePath: /v1
+securityDefinitions:
+  api_auth:
+    type: oauth2
+    authorizationUrl: http://api.rty.io/oauth/dialog
+    flow: implicit
+    scopes:
+      write:contracts: modify contracts
+      read:contracts: read contracts
+schemes:
+  # TODO(mlefebvre): remove http to make production-grade
+  - http
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+tags:
+  - name: contracts
+    description: Contracts API related elements
+  - name: api
+    description: Api related elements
+  - name: read
+    description: read operations
+  - name: write
+    description: write operations
+paths:
+  /contracts:
+    x-swagger-router-controller: contracts
+    head:
+      operationId: fetchAllMeta
+      summary: Return's a meta information about a research
+      tags:
+        - read
+        - contracts
+      description: |-
+        Fetch the list of contracts according to a set of parameters passed in the url.
+        The most relevant use case is tho serach for contract.
+      security:
+        - api_auth:
+            - "read:contracts"
+      parameters:
+        - $ref: '#/parameters/page'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/fields'
+        - $ref: '#/parameters/searchQuery'
+      responses:
+        200:
+          description: Meta informations about the list of contract
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+            x-nb-items:
+              type: integer
+              description: the number of items returned by the query.
+        400:
+          $ref: '#/responses/BadRequest'
+        default:
+          $ref: '#/responses/DefaultError'
+    get:
+      operationId: fetchAll
+      summary: Return's a list of contracts
+      tags:
+        - read
+        - contracts
+      description: |-
+        Fetch the list of contracts according to a set of parameters passed in the url.
+        The most relevant use case is tho serach for contract.
+      security:
+        - api_auth:
+            - "read:contracts"
+      parameters:
+        - $ref: '#/parameters/page'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/fields'
+      responses:
+        200:
+          description: List of contract
+          schema:
+            $ref: "#/definitions/Contracts"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      operationId: createContract
+      summary: Create a contract on the backend
+      tags:
+        - write
+        - contracts
+      description: |-
+        Create a contract passed on the body of the request (payload).
+        The contract will be created with an internal id. If a client provide
+        an id, this one will be indexed. The internal id is ALWAYS defined and
+        provided in headers if the client wants to make a mapping. The technical
+        internal id isn't updatable and any future request trying to make this
+        will raise an exception.
+      security:
+        - api_auth:
+            - "write:contracts"
+      parameters:
+        - in: body
+          name: contract
+          required: true
+          schema:
+            $ref: '#/definitions/Contract'
+      responses:
+        201:
+          description: Indicates the contract has been created.
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+          
+  /contracts/{contractId}:
+    x-swagger-router-controller: contracts
+    get:
+      operationId: fetchContract
+      summary: Return's information about a contract
+      tags:
+        - read
+        - contracts
+      description: |-
+        Return's information about a contract with a given ID
+      security:
+        - api_auth:
+            - "read:contracts"
+      parameters:
+        - $ref: '#/parameters/contractId'
+      responses:
+        200:
+          description: the contract
+          schema:
+            $ref: '#/definitions/Contract'
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+    head:
+      operationId: fetchContractMeta
+      summary: Return's meta information about a contract
+      tags:
+        - read
+        - contracts
+      description: |-
+        Return's meta information about a contract with a given ID
+      security:
+        - api_auth:
+            - "read:contracts"
+      parameters:
+        - $ref: '#/parameters/contractId'
+      responses:
+        200:
+          description: meta information for the contract
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+            x-cache-age:
+              type: integer
+              description: the age of the cache in milliseconds if it exists, -1 if it doesn't
+            x-creation-date:
+              type: string
+              description: the date when the entity has been created (ISO 8601 - ex 2018-02-04T09:38:36Z)
+            x-update-date:
+              type: string
+              description: the date when the entity has been updated the last time (ISO 8601 - ex 2018-02-04T09:38:36Z)
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+          
+    put:
+      operationId: updateContract
+      summary: Return's information about a contract
+      tags:
+        - write
+        - contracts
+      description: |-
+        Return's information about a contract with a given ID
+      security:
+        - api_auth:
+            - "write:contracts"
+      parameters:
+        - $ref: '#/parameters/contractId'
+        - in: body
+          name: contract
+          required: true
+          schema:
+            $ref: '#/definitions/Contract'
+      responses:
+        200:
+          description: the contract
+          schema:
+            $ref: '#/definitions/Contract'
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+          
+    patch:
+      # TODO(mlefebvre) the payload should be an advanced key value map
+      operationId: patchContract
+      summary: Return's information about a contract
+      tags:
+        - write
+        - contracts
+      description: |-
+        Return's information about a contract with a given ID
+      security:
+        - api_auth:
+            - "write:contracts"
+      parameters:
+        - $ref: '#/parameters/contractId'
+        - in: body
+          name: contract
+          required: true
+          schema:
+            $ref: '#/definitions/Contract'
+      responses:
+        200:
+          description: the contract
+          schema:
+            $ref: '#/definitions/Contract'
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+          
+    delete:
+      operationId: deleteContractById
+      summary: Return's information about a contract
+      tags:
+        - write
+        - contracts
+      description: |-
+        Return's information about a contract with a given ID
+      security:
+        - api_auth:
+            - "write:contracts"
+      parameters:
+        - $ref: '#/parameters/contractId'
+      responses:
+        200:
+          description: Indicates the contract has been successfully deleted
+          headers:
+            x-request-id:
+              type: string
+              description: the unique id of the request
+            x-response-time:
+              type: string
+              description: the duration of the request processing server side
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/BadRequest'
+  /swagger:
+    x-swagger-pipe: swagger_raw
+
+parameters:
+  page:
+    name: page
+    in: query
+    required: false
+    type: integer
+    description: indicates the page number to fetch
+  limit:
+    name: limit
+    in: query
+    required: false
+    type: integer
+    description: indicates the max number of item to load
+  fields:
+    name: fields
+    in: query
+    required: false
+    type: array
+    items:
+      type: string
+    description: Indicates the list of fields to return for each entity
+  contractId:
+    name: contractId
+    in: path
+    type: string
+    required: true
+    description: indicates the contract to fetch information for
+  searchQuery:
+    name: q
+    in: query
+    type: string
+    required: false
+    description: the classic search query defined in a 'q' parameter.
+
+definitions:
+  Term:
+    type: object
+    required:
+      - id
+      - title
+      - content
+    properties:
+      id:
+        type: string
+        description: the uniqu id of the term
+      title:
+        type: string
+        description: the title of the term
+      content:
+        type: string
+        description: the content of the term
+  Contract:
+    type: object
+    required:
+      - id
+      - title
+      - owner
+      - startDate
+      - endDate
+      - terms
+    properties:
+      id:
+        type: string
+        description: the unique identifier of the contract
+      title:
+        type: string
+        description: the title of the contract
+      terms:
+        description: indicates the terms of the contract
+        type: array
+        items:
+          $ref: '#/definitions/Term'
+      owner:
+        type: string
+        description: the unique id of the owner
+      startDate:
+        type: string
+        description: the date when the contract starts
+      endDate:
+        type: string
+        description: the date when the contract ends
+        
+  Contracts:
+    description: Represents an array of contracts
+    type: array
+    items:
+      $ref: '#/definitions/Contract'
+  ErrorResponse:
+    required:
+      - message
+    properties:
+      message:
+        type: string
+        description: the message associate to the error
+      code:
+        type: string
+        description: the code of the error message
+responses:
+  BadRequest:
+    description: Indicates the request is incorrect regarding rules implemented server side.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: the code associate to the error.
+        message:
+          type: string
+          description: the message associate to the error.
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+        
+  EntityNotFound:
+    description: indicates that the entity with the given id does not exists on the system.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: the code associate to the error.
+        message:
+          type: string
+          description: the message associate to the error.
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+  
+  Unauthorized:
+    description: indicates that the client is not authenticated.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: the code associate to the error.
+        message:
+          type: string
+          description: the message associate to the error.
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+  
+  Forbidden:
+    description: indicates that the client cannot perform the request.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: the code associate to the error.
+        message:
+          type: string
+          description: the message associate to the error.
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+        
+  DefaultError:
+    description: the default error response.
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+
+  InternalServerError:
+    description: Indicates an internal server error which implies the request processing cancellation.
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+    headers:
+      x-request-id:
+        type: string
+        description: the unique id of the request.
+      x-response-time:
+        type: integer
+        description: the duration of the request processing server side.
+
