@@ -1,12 +1,17 @@
 'use strict';
 
-var SwaggerRestify = require('swagger-restify-mw');
-var restify = require('restify');
-var app = restify.createServer();
+const SwaggerRestify = require('swagger-restify-mw');
+const restify = require('restify');
+const Logger = require('bunyan');
+const logger = new Logger({name: 'contractsApi'});
+const app = restify.createServer({
+  name: 'contractsApi',
+  log: logger
+});
 
 module.exports = app; // for testing
 
-var config = {
+const config = {
   appRoot: __dirname // required config
 };
 

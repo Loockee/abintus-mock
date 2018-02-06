@@ -8,8 +8,10 @@
   "license": "",
   "main": "app.js",
   "dependencies": {
+    "bunyan": "^1.8.12",
     "restify": "^4.0.2",
-    "swagger-restify-mw": "^0.1.0"
+    "swagger-restify-mw": "^0.1.0",
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
     "should": "^7.1.0",

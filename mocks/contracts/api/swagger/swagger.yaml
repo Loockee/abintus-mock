@@ -51,9 +51,9 @@ paths:
       description: |-
         Fetch the list of contracts according to a set of parameters passed in the url.
         The most relevant use case is tho serach for contract.
-      security:
-        - api_auth:
-            - "read:contracts"
+#      security:
+#        - api_auth:
+#            - "read:contracts"
       parameters:
         - $ref: '#/parameters/page'
         - $ref: '#/parameters/limit'
@@ -85,9 +85,9 @@ paths:
       description: |-
         Fetch the list of contracts according to a set of parameters passed in the url.
         The most relevant use case is tho serach for contract.
-      security:
-        - api_auth:
-            - "read:contracts"
+#      security:
+#        - api_auth:
+#            - "read:contracts"
       parameters:
         - $ref: '#/parameters/page'
         - $ref: '#/parameters/limit'
@@ -115,9 +115,9 @@ paths:
         provided in headers if the client wants to make a mapping. The technical
         internal id isn't updatable and any future request trying to make this
         will raise an exception.
-      security:
-        - api_auth:
-            - "write:contracts"
+#      security:
+#        - api_auth:
+#            - "write:contracts"
       parameters:
         - in: body
           name: contract
@@ -148,9 +148,9 @@ paths:
         - contracts
       description: |-
         Return's information about a contract with a given ID
-      security:
-        - api_auth:
-            - "read:contracts"
+#      security:
+#        - api_auth:
+#            - "read:contracts"
       parameters:
         - $ref: '#/parameters/contractId'
       responses:
@@ -185,9 +185,9 @@ paths:
         - contracts
       description: |-
         Return's meta information about a contract with a given ID
-      security:
-        - api_auth:
-            - "read:contracts"
+#      security:
+#        - api_auth:
+#            - "read:contracts"
       parameters:
         - $ref: '#/parameters/contractId'
       responses:
@@ -230,9 +230,9 @@ paths:
         - contracts
       description: |-
         Return's information about a contract with a given ID
-      security:
-        - api_auth:
-            - "write:contracts"
+#      security:
+#        - api_auth:
+#            - "write:contracts"
       parameters:
         - $ref: '#/parameters/contractId'
         - in: body
@@ -274,9 +274,9 @@ paths:
         - contracts
       description: |-
         Return's information about a contract with a given ID
-      security:
-        - api_auth:
-            - "write:contracts"
+#      security:
+#        - api_auth:
+#            - "write:contracts"
       parameters:
         - $ref: '#/parameters/contractId'
         - in: body
@@ -317,9 +317,9 @@ paths:
         - contracts
       description: |-
         Return's information about a contract with a given ID
-      security:
-        - api_auth:
-            - "write:contracts"
+#      security:
+#        - api_auth:
+#            - "write:contracts"
       parameters:
         - $ref: '#/parameters/contractId'
       responses:
