@@ -38,5 +38,15 @@ export class EmployeeService {
   deleteEmployee(employee: Employee) {
     this.employeeList.remove(employee.$key);
   }
+  
+  clearSelected() {
+    this.selectedEmployee = {
+      $key: null,
+      name: '',
+      position: '',
+      office: '',
+      salary: 0
+    };
+  }
 
 }

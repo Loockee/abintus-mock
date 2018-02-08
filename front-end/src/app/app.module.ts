@@ -104,6 +104,9 @@ import {CountryService} from './demo/service/countryservice';
 import {EventService} from './demo/service/eventservice';
 import {NodeService} from './demo/service/nodeservice';
 import {BreadcrumbService} from './breadcrumb.service';
+
+import { ToastrModule } from 'ngx-toastr';
+
 import { EmployeesComponent } from './employees/employees.component';
 import { EmployeeComponent } from './employees/employee/employee.component';
 import { EmployeeListComponent } from './employees/employee-list/employee-list.component';
@@ -181,7 +184,8 @@ import { EmployeeListComponent } from './employees/employee-list/employee-list.c
         TreeModule,
         TreeTableModule,
         AngularFireModule.initializeApp(environment.firebaseConfig),
-        AngularFireDatabaseModule
+        AngularFireDatabaseModule,
+        ToastrModule.forRoot()
     ],
     declarations: [
         AppComponent,
