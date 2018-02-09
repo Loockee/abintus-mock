@@ -1,60 +1,771 @@
 swagger: "2.0"
 info:
   version: "0.0.1"
-  title: Hello World App
-# during dev, should point to your local machine
-host: localhost:10010
-# basePath prefixes all resource paths 
-basePath: /
-# 
+  title: Links API
+  description: |-
+    The simple definition of the link API
+host: api.abintus.local:10010
+basePath: /v1
 schemes:
   # tip: remove http to make production-grade
   - http
   - https
-# format of bodies a client can send (Content-Type)
 consumes:
   - application/json
-# format of the responses to the client (Accepts)
 produces:
   - application/json
 paths:
-  /hello:
-    # binds a127 app logic to a route
-    x-swagger-router-controller: hello_world
+  /links:
+    x-swagger-router-controller: links
     get:
-      description: Returns 'Hello' to the caller
-      # used as the method name of the controller
-      operationId: hello
+      summary: Fetch a list of links according to a request
+      description: |-
+        Provide a list of links according to information present in the query string
+        The 'q' element is used to execute custom reasarch. The format of the q in
+        described in details in the parameter documentation. It can follows the
+        Lucene format or can use a plain JSON. Please, refer to the documentation
+        to obtain more information.
+      operationId: fetchAll
       parameters:
-        - name: name
-          in: query
-          description: The name of the person to whom to say hello
-          required: false
-          type: string
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/fields'
+        - $ref: '#/parameters/researchQuery'
       responses:
-        "200":
-          description: Success
+        200:
+          description: Send back the list of links matching the request
           schema:
-            # a pointer to a definition
-            $ref: "#/definitions/HelloWorldResponse"
-        # responses may fall through to errors
+            type: array
+            items:
+              type: object
+              required:
+                - id
+                - offerId
+              properties:
+                id:
+                  type: integer
+                  description: the unique ID of the link
+                offerId:
+                  type: integer
+                  description: the id of the offer related to the link
+                link:
+                  type: string
+                  description: The link of the response
+                status:
+                  type: integer
+                  description: Indicates the status of the link
+                accessed:
+                  type: integer
+                  description: Indicates the numberof time the link has been accessed
+                generatedFrom:
+                  type: string
+                  description: |-
+                    Indicates the IP (v4/v6) of the host from the request ot generate
+                    the offer has been issued.
+                links:
+                  $ref: '#/definitions/HateoasLink'
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        406:
+          $ref: '#/responses/Conflict'
+        408:
+          $ref: '#/responses/TimeoutError'
+        415:
+          $ref: '#/responses/UnsupportedMediaType'
+        500:
+          $ref: '#/responses/InternalServerError'
         default:
-          description: Error
+          $ref: '#/responses/InternalServerError'
+    head:
+      summary: Fetch meta information about a request
+      description: |-
+        Provide meta information about a request (search) made across the
+        api. The payload of the response isn't defined.
+      operationId: fetchAllMeta
+      parameters:
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/fields'
+        - $ref: '#/parameters/researchQuery'
+        - name: link
+          in: query
+          type: string
+          pattern: "[a-zA-Z0-9]+"
+          required: false
+          description: |-
+            The link to look for. In such case, if the link does not exists in 
+            the database, the service will return a 404
+        - name: x-response-format
+          in: header
+          type: string
+          description: Indicates the expected form of the response
+          required: false
+          enum:
+            - plain
+            - partial
+            - meta
+            - short
+        - name: force
+          in: header
+          description: |-
+            Indicates the link should be sent back even if it is not activated 
+            or if it has already been visited (or if the status is not readable).
+          type: integer
+          required: false
+          default: 0
+      responses:
+        200:
+          description: Send back the list of links matching the request
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Links"
+          headers:
+            x-request-id:
+              type: string
+              description: The unique ID of the string
+            x-response-time:
+              type: integer
+              description: The time the server takes to process the request in milliseconds
+            x-entity-id:
+              minItems: 0
+              maxItems: 1
+              type: integer
+              description: The unique id of the link
+            x-related-offer:
+              minItems: 0
+              maxItems: 1
+              type: integer
+              description: The unique id of the offer related to the link
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        408:
+          $ref: '#/responses/TimeoutError'
+        415:
+          $ref: '#/responses/UnsupportedMediaType'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+    post:
+      summary: Create a new link on the api.
+      description: |-
+        Allows to create a new resource on the backend
+      operationId: createLink
+      parameters:
+        - name: link
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Link'
+      responses:
+        201:
+          description: Incidates the link has been created.
+          schema:
+            type: object
+            required:
+              - id
+              - offerId
+            properties:
+              id:
+                type: integer
+                description: The unique ID of the link created
+              offerId:
+                type: integer
+                description: The id of the offer related to the link
+              links:
+                $ref: '#/definitions/HateoasLinks'
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        406:
+          # The link already exists, it MUST be unique
+          $ref: '#/responses/Conflict'
+        408:
+          $ref: '#/responses/TimeoutError'
+        415:
+          $ref: '#/responses/UnsupportedMediaType'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+  /links/{linkId}:
+    x-swagger-router-controller: links
+    get:
+      operationId: searchLinkById
+      summary: Fetch a link using the link itself
+      description: |-
+        Trying to look after a link based on the generated link. The link hasn't
+        the full uri but only the relevant part of this one. This part has no
+        host information, no port and the first part of the url (/<version>/links)
+        is not a part of it. The string is an alphanumeric information.
+      parameters:
+        - $ref: '#/parameters/fields'
+        - $ref: '#/parameters/linkId'
+      responses:
+        200:
+          description: |-
+            Send back meta information about the link. The link itself is not
+            necessarily sent back to the client. The headers or the parameter
+            information which indicates the form of the response are checked
+            to format the right response.
+          schema:
+            $ref: '#/definitions/LinkResponse'
+          headers:
+            x-request-id:
+              type: string
+              description: The unique ID of the request
+            x-response-time:
+              type: integer
+              description: The time the server takes to process the request
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+    head:
+      operationId: searchLinkByIdMeta
+      summary: Fetch a link using the link itself
+      description: |-
+        Trying to look after a link based on the generated link. The link hasn't
+        the full uri but only the relevant part of this one. This part has no
+        host information, no port and the first part of the url (/<version>/links)
+        is not a part of it. The string is an alphanumeric information.
+      parameters:
+        - $ref: '#/parameters/fields'
+        - $ref: '#/parameters/linkId'
+      responses:
+        200:
+          description: |-
+            Send back meta information about the link. The link itself is not
+            necessarily sent back to the client. The headers or the parameter
+            information which indicates the form of the response are checked
+            to format the right response. The response contains no data.
+          headers:
+            x-request-id:
+              type: string
+              description: The unique ID of the request
+            x-response-time:
+              type: integer
+              description: The time the server takes to process the request
+            x-entity-id:
+              type: integer
+              description: the unique ID of the item
+            x-offer-id:
+              type: integer
+              description: The unique ID of the related offer
+            x-cache-age:
+              type: integer
+              description: The age of the entity in the cache, -1 if the cache isn't active.
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+    put:
+      operationId: updateLink
+      summary: Make a full update of the link
+      description: |-
+        Make a full update of the link. The link gave in payload will replace the
+        actual content of the link
+      parameters:
+        - $ref: '#/parameters/linkId'
+        - name: link
+          in: body
+          required: true
+          description: The new version of the link
+          schema:
+            $ref: '#/definitions/Link'
+      responses:
+        200:
+          description: The link has been successfully updated
+          headers:
+            x-request-id:
+              type: string
+              description: the unique ID of the request
+            x-response-time:
+              type: integer
+              description: Indicates the time the server takes to process the request
+            x-entity-version:
+              type: string
+              description: |-
+                Indicates the new version of the entity. If the backend doesn't
+                supports versionning, the version will be defined to the entity ID
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+    patch:
+      operationId: patchLink
+      summary: Make a partial update of the link
+      description: |-
+        Make a partial update of the link. The hashmap given in payload will
+        replace the corresponding value of the link. This method returns the
+        new version of the link.
+      parameters:
+        - $ref: '#/parameters/linkId'
+        - name: link
+          in: body
+          required: true
+          description: The new version of the link
+          schema:
+            $ref: '#/definitions/Link'
+      responses:
+        200:
+          description: The link has been successfully updated
+          schema:
+            $ref: '#/definitions/HashMap'
+          headers:
+            x-request-id:
+              type: string
+              description: the unique ID of the request
+            x-response-time:
+              type: integer
+              description: Indicates the time the server takes to process the request
+            x-entity-version:
+              type: string
+              description: |-
+                Indicates the new version of the entity. If the backend doesn't
+                supports versionning, the version will be defined to the entity ID
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+    delete:
+      operationId: deleteLink
+      summary: Delete the link from the backend.
+      description: |-
+        Delete the link from the backend. This is a complete remove if the header
+        'x-complete-remove' is passed at 1. Otherwise, this corresponding to an update
+        which will disable the link on the database.
+      parameters:
+        - $ref: '#/parameters/linkId'
+        - name: x-complete-remove
+          in: header
+          required: false
+          default: 0
+          type: integer
+          description: Indicates if the link should be dropped out or simply deactivated.
+      responses:
+        200:
+          description: The link has been successfully removed
+          headers:
+            x-request-id:
+              type: string
+              description: the unique ID of the request
+            x-response-time:
+              type: integer
+              description: Indicates the time the server takes to process the request
+            x-entity-patched:
+              type: string
+              description: |-
+                Indicates if the entity has been patched (1) or deleted (0)
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+        404:
+          $ref: '#/responses/EntityNotFound'
+        500:
+          $ref: '#/responses/InternalServerError'
+        default:
+          $ref: '#/responses/InternalServerError'
+
   /swagger:
     x-swagger-pipe: swagger_raw
-# complex objects have schema definitions
+
+parameters:
+
+  linkId:
+    in: path
+    name: linkId
+    type: integer
+    description: The unique ID of the link
+    required: true
+  
+  link:
+    in: query
+    name: link
+    type: string
+    description: The link
+    required: false
+
+  offset:
+    in: query
+    name: offset
+    type: integer
+    description: |-
+      This paramters indicates he page number to load information for (pageable), by default it is 0.
+      For instance, if the client set the limit to 10 and the offset to 2, it will fetch result for position
+      20 to 29 (included) in the database.
+    required: false
+    default: 1
+# following attributes are only available in the specification 3.0
+#    examples:
+#      first:
+#        value: 1
+#        summary: load the first 10 (default) items
+#      second:
+#        value: 3
+#        summary: load the third page of results
+ 
+  limit:
+    in: query
+    name: limit
+    type: integer
+    description: |-
+      Indicates the number of item to load in a page. By default, the system will load 10 items. An header
+      or, if the API supports HATEAOS, a link will give an information about the next item. If performance is
+      acceptable, the response may contains information about the total number of item presents in the selected
+      subset (according to the request information).
+    required: false
+    default: 10
+# following attributes are only available in the specification 3.0
+#    examples:
+#      first:
+#        value: 10
+#        summary: load 10 items
+#      second:
+#        value: 3
+#        summary: load only 3 items.
+ 
+  fields:
+    in: query
+    name: fields
+    description: comma separated list of fields to load.
+    required: false
+    type: array
+    items:
+      type: string
+# following attributes are only available in the specification 3.0
+#   examples:
+#     first:
+#       value: id,name,summary
+#       summary: load only id, name and summary field of the requested entity
+  researchQuery:
+    in: query
+    name: q
+    description: |-
+      Indicates a research query in a traditional http form way ('index.html?q=...')
+    type: string
+    required: false
+
 definitions:
-  HelloWorldResponse:
+  LinksResponse:
+    type: array
+    items:
+      $ref: '#/definitions/LinkResponse'
+  LinkResponse:
+    allOf:
+      - $ref: '#/definitions/Link'
+      - $ref: '#/definitions/HateoasLinks'
+  Links:
+    type: array
+    items:
+      $ref: '#/definitions/Link'
+  Link:
+    type: object
     required:
-      - message
+      - id
+      - offerId
+      - link
     properties:
-      message:
+      id:
+        type: integer
+        description: The unique id of the link
+      offerId:
+        type: integer
+        description: The unique id of the offer which refer the link
+      link:
         type: string
-  ErrorResponse:
+        description: The link of the response
+      status:
+        type: integer
+        description: Indicates the status of the link
+      accessed:
+        type: integer
+        description: Indicates the numberof time the link has been accessed
+      generatedFrom:
+        type: string
+        description: |-
+          Indicates the IP (v4/v6) of the host from the request ot generate
+          the offer has been issued.
+  HashMap:
+    type: array
+    items:
+      $ref: '#/definitions/KeyValuePair'
+  KeyValuePair:
+    type: object
     required:
-      - message
+      - key
+      - value
     properties:
-      message:
+      key:
         type: string
+        description: The name of the key
+      value:
+        type: string
+        description: The value associated to the key
+  HateoasLinks:
+    description: List of link according to the HATEOAS format
+    type: array
+    items:
+      $ref: '#/definitions/HateoasLink'
+  HateoasLink:
+    description: Link defined by the HATEOAS format
+    required:
+      - rel
+      - href
+    properties:
+      rel:
+        type: string
+        description: the kind of relation of the link
+      href:
+        type: string
+        description: the link itself
+      method:
+        type: string
+        enum:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - HEAD
+          - OPTIONS
+        description: |-
+          The method to use to follow the link. If nothing is indicated, the
+          default value is GET.
+        default: GET
+
+responses:
+  BadRequest:
+    description: |-
+      This response indicates an invalid request. This may occured if some parameters are not set correctly.
+      if the search request is not valid (query format, unknown fields, ...) the server MUST send back
+      information about the error, as precise as possible without providing too deep information about
+      back-end service. Both error code and error messge MUST transmit 'as is' by the gateway.
+
+      > Note - take care about the size of headers when the service send back information using headers.
+      Server (IIS, ngnix, Apache, ...) have a limit (between 8ko and 12ko) and if headers exceed this
+      threshold, the overflow is simply dropped out. This results of inconstency at the message level
+      and corrupt the exchage. This kind of error MUST be manage as an error by all elements of the IS.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: the code of the error
+        message:
+          type: string
+          description: the message associate to the error
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  EntityNotFound:
+    description: indicates that the entity doesn't exists in the database
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-requested-id:
+        type: string
+        description: indicates the requested headers
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  InternalServerError:
+    description: Indicates an internal error of the service
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  Unauthorized:
+    description: indicates that the requester is not allowed to fetch the resource
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  TimeoutError:
+    description: Indicates the request timeout has been exhausted
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  UnsupportedMediaType:
+    description: Indicates the media type provided is not valid
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  QuotaExceeded:
+    description: This response is send back to the client if the rate has been excedeed. This is used at the gateway level. Internal API SHOULD not be sensitive to this parameter.
+    headers:
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-rate-quota:
+        description: give the limit of the quota for the application.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+  Forbidden:
+    description: Indicates the request is not allowed for the user authenticated.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Indicates the code of the error
+        message:
+          type: string
+          description: |-
+            Indicates the message associate to the code. This message is translated
+            according the lang indicated on headers. If no headers indicates the
+            accepted language, the result will be provided in english.
+  Conflict:
+    description: |-
+      This response SHOULD be send back if their is an inconsistency inside the request. The
+      main difference with the 400 error is that the request is valid at his format level, here
+      the search request execution at the server level will produce an inconsistency result or
+      a system violation.
+    schema:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    headers:
+      x-request-id:
+        type: string
+      x-response-time:
+        type: integer
+      x-error-code:
+        type: string
+      x-error-message:
+        type: string
+  GenericError:
+    description: 'represents a generic error'
+    headers:
+      x-request-id:
+        description: the correlation id of the request
+        type: string
+      x-response-time:
+        description: Indicates the time taking by the processing server side.
+        type: integer
+      x-error-code:
+        type: string
+        description: the code of the error
+      x-error-message:
+        type: string
+        description: the message associate to the error
+
